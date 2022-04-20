@@ -19,26 +19,34 @@ class Game(object):
 
     player = Player
     enemies = []
-    gameDelay = 10
+    gameDelay = 100
     defeated = 0
 
-    def __init__(self, agro, density, health, power):
+    def __init__(self, agro, number, health, power):
         self.agro = agro
-        self.density = density
+        self.number = number
         self.health = health
         self.power = power
 
 
     def enemyActivity(self,window):
+        if pygame.time.get_ticks()%10 != 0:
+            return
         for enemy in self.enemies:
-            if random.randint(50) < self.agro:
-                pygame.draw.line(window,(255,0,0), (enemy,20), ((enemy + random.randint(20) - 10), 600))
+            randd = random.randint(50)
+            print(randd)
+            if randd < self.agro:
+                shotX = (enemy + random.randint(20) - 10)
+                pygame.draw.line(window,(255,0,0), (enemy,20), (shotX, 600))
+                if( 20 > abs(shotX - self.player.coords[0])):
+                    print(shotX," " ,self.player.coords[0])
+                    self.health -=1
+                
 
     def createEnemy(self):
-        pos = self.width / self.density
-        while pos  < 390:
-            self.enemies.append(10+ pos)
-            pos += pos
+        gap = (self.width - 20) / self.number
+        for i in range(0,self.number):
+            self.enemies.append(i*gap + 10)
     
     def drawEnemy(self,window):
         for enemy in self.enemies:
@@ -66,6 +74,10 @@ class Game(object):
                 print(time)
             pygame.event.get()
             self.drawEnemy(window)
+            print("health",self.health)
+            if self.health == 0:
+                print("gameover")
+                break
             self.enemyActivity(window) 
             pygame.display.update()
             pygame.time.delay(self.gameDelay)
@@ -79,16 +91,3 @@ class Game(object):
 game1 = Game(5,10,10,10)
 game1.startGame()
 
-""""
-while gameOn:
-    
-    
-    pygame.draw.line(window, (255,255,255),(0,60),(100,150))
-    pygame.display.update()
-    for event in  pygame.event.get():
-       if event.type == pygame.QUIT:
-          pygame.QUIT
-    
-    keys = pygame.key.get_pressed()
-    for key in keys:
-        if keys[pygame.]"""
