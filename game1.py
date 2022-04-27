@@ -2,6 +2,9 @@ from random import randint
 import pygame
 from numpy import random
 class Game(object):
+    enemyTotalHealth = 10
+    currentEnemyHealth = 10
+    laserduration = 500
     width = 800
     height = 600
     class Player(object):
@@ -16,78 +19,103 @@ class Game(object):
             else:
                 self.coords[0] +=1
     
+    class Laser(object):
+        start, finish, color, duration = (0,0),(0,0),(0,0,0),0
+        def __init__(self,start, finish, color, duration ) :
+            self.start, self.finish, self.color, self.duration = start, finish, color, duration 
 
     player = Player
     enemies = []
     gameDelay = 100
     defeated = 0
+    shots = []
 
-    def __init__(self, agro, number, health, power):
+    def __init__(self, agro, health, power):
         self.agro = agro
-        self.number = number
         self.health = health
         self.power = power
+        self.window = pygame.display.set_mode((self.width,self.height))
 
+    def drawShot(self,laser):
+        pygame.draw.line(self.window, laser.color, laser.start, laser.finish)
+        laser.duration -= 1
+        return laser
 
-    def enemyActivity(self,window):
-        if pygame.time.get_ticks()%10 != 0:
-            return
+    def drawAllShots (self):
+        for laser in self.shots:
+            laser = self.drawShot(laser)
+            if laser.duration == 0:
+                self.shots.remove(laser)
+
+    def enemyActivity(self):
         for enemy in self.enemies:
-            randd = random.randint(50)
-            print(randd)
-            if randd < self.agro:
-                shotX = (enemy + random.randint(20) - 10)
-                pygame.draw.line(window,(255,0,0), (enemy,20), (shotX, 600))
-                if( 20 > abs(shotX - self.player.coords[0])):
-                    print(shotX," " ,self.player.coords[0])
-                    self.health -=1
+            shotX = (enemy + random.randint(300) - 150)
+            pygame.draw.line(self.window,(255,0,0), (enemy,20), (shotX, 600))
+            laser = self.Laser((enemy,20), (shotX, 600), (255, 0,0), self.laserduration)
+            self.shots.append(laser)
+            if( 20 > abs(shotX - self.player.coords[0])):
+                self.health -=1
                 
 
     def createEnemy(self):
-        gap = (self.width - 20) / self.number
-        for i in range(0,self.number):
-            self.enemies.append(i*gap + 10)
+        gap = (self.width - 20) /5
+        self.enemies.append(70)
+        for i in range(1,5):
+            self.enemies.append(i*gap + 70 )
     
-    def drawEnemy(self,window):
+    def drawEnemy(self):
         for enemy in self.enemies:
-            pygame.draw.circle(window, (255,0,0), (enemy,20), 20)
+            pygame.draw.circle(self.window, (255,0,0), (enemy,20), 20)
 
-    def playerActivity(self,window):
+    def playerActivity(self):
         min =801
         cord = -1
         for i in self.enemies:
             if abs(self.player.coords[0] -i )< min:
                 min = abs(self.player.coords[0] -i )
                 cord = i
-        pygame.draw.line(window,(0,255,0),(self.player.coords), (cord,0))
-        
+        laser = self.Laser(self.player.coords, (cord,20), (0,255,0), self.laserduration)
+        self.shots.append(laser)
+        self.currentEnemyHealth -= self.power
+        if self.currentEnemyHealth == 0:
+            self.enemies.pop()
+            self.currentEnemyHealth = self.enemyTotalHealth
 
-    def startGame(self):
-        window = pygame.display.set_mode((self.width,self.height))
-        window.fill((220,243,255))
+
+    def startGame(self):       
+        enemyEvent = pygame.USEREVENT+1
+        playerEvent= pygame.USEREVENT+2
+        pygame.time.set_timer(enemyEvent, 1000)
+        pygame.time.set_timer(playerEvent, 1000)
+        self.window.fill((220,243,255))
         self.createEnemy()
-        time = 0
-        while True:
-            if time >1500 +pygame.time.get_ticks():
-                self.playerActivity(window)
-                time = pygame.time.get_ticks()
-                print(time)
-            pygame.event.get()
-            self.drawEnemy(window)
-            print("health",self.health)
-            if self.health == 0:
-                print("gameover")
-                break
-            self.enemyActivity(window) 
-            pygame.display.update()
-            pygame.time.delay(self.gameDelay)
-            window.fill((220,243,255))
-            pygame.draw.circle(window, (0,255,0),(self.player.coords),20)
+        pygame.time.delay(self.gameDelay)
+        gameover = False        
+        while not gameover:
+            self.window.fill((220,243,255))
+            self.drawAllShots()
             self.player.move(self.player)
+            pygame.draw.circle(self.window, (0,255,0),(self.player.coords),20)
+            self.drawEnemy()
+            for event in pygame.event.get():
+                if event.type == enemyEvent:
+                    self.enemyActivity() 
+                if event.type == playerEvent:
+                    self.playerActivity()
+                if (self.health == 0) or (not self.enemies):
+                    print("gameover")
+                    gameover = True
+            pygame.display.update()
+
+            
+
+            
+            
+           
 
     
 
 
-game1 = Game(5,10,10,10)
+game1 = Game(5,10,1)
 game1.startGame()
 
