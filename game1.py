@@ -1,13 +1,16 @@
 from random import randint
 import pygame
 from numpy import random
+import numpy as np
+
 
 class Game(object):
-    enemyTotalHealth = 10
-    currentEnemyHealth = 10
+    enemyTotalHealth = 70
+    currentEnemyHealth = 70
     laserduration = 500
     width = 800
     height = 600
+
     class Player(object):
         health = 10
         coords = [400,590]
@@ -28,27 +31,34 @@ class Game(object):
 
     player = Player
     enemies = []
-    gameDelay = 100
+    gameDelay = 10
     defeated = 0
     shots = []
+    enemyEvent = pygame.USEREVENT+1
+    playerEvent= pygame.USEREVENT+2
+    def __del__(self):
+        print("I'm being automatically destroyed. Goodbye!")
 
     def __init__(self, agro, health, power):
+        self.window = pygame.display.set_mode((self.width,self.height))
+
+        pygame.time.set_timer(self.enemyEvent, int(2000/ agro))
+        pygame.time.set_timer(self.playerEvent, 1000)
         self.agro = agro
         self.health = health
         self.power = power
-        self.window = pygame.display.set_mode((self.width,self.height))
     
     """This function draws a laser from the list and decrements its duration variable, which allows us to control for how many frames a line is drawn."""
     def drawShot(self,laser):
         pygame.draw.line(self.window, laser.color, laser.start, laser.finish)
-        laser.duration -= 1
+        laser.duration -= 2
         return laser
 
     """"This function uses (shots) list to draw all the necessary lines on the screen for each frame."""
     def drawAllShots (self):
         for laser in self.shots:
             laser = self.drawShot(laser)
-            if laser.duration == 0:
+            if laser.duration <= 0:
                 self.shots.remove(laser)
 
     """This function calculates coordinates for every enemy laser and puts them in a list. Also if the player is hit by the laser the player loses health."""
@@ -59,7 +69,7 @@ class Game(object):
             laser = self.Laser((enemy,20), (shotX, 600), (255, 0,0), self.laserduration)
             self.shots.append(laser)
             if( 20 > abs(shotX - self.player.coords[0])):
-                self.health -=1
+                self.health -=20
                 
     """"Creates a set number of enemy circles and keeps them in a list."""
     def createEnemy(self):
@@ -83,39 +93,49 @@ class Game(object):
         laser = self.Laser(self.player.coords, (cord,20), (0,255,0), self.laserduration)
         self.shots.append(laser)
         self.currentEnemyHealth -= self.power
-        if self.currentEnemyHealth == 0:
+        if self.currentEnemyHealth <= 0:
             self.enemies.pop()
             self.currentEnemyHealth = self.enemyTotalHealth
 
 
     def startGame(self):       
-        enemyEvent = pygame.USEREVENT+1
-        playerEvent= pygame.USEREVENT+2
-        pygame.time.set_timer(enemyEvent, 1000)
-        pygame.time.set_timer(playerEvent, 1000)
         self.window.fill((220,243,255))
         self.createEnemy()
         pygame.time.delay(self.gameDelay)
         gameover = False        
         while not gameover:
+            self.player.move(self.player)
             self.window.fill((220,243,255))
             self.drawAllShots()
-            self.player.move(self.player)
             pygame.draw.circle(self.window, (0,255,0),(self.player.coords),20)
             self.drawEnemy()
             for event in pygame.event.get():
-                if event.type == enemyEvent:
+
+                if event.type == self.enemyEvent:
                     self.enemyActivity() 
-                if event.type == playerEvent:
+                if event.type == self.playerEvent:
                     self.playerActivity()
-                if (self.health == 0) or (not self.enemies):
-                    print("gameover")
-                    gameover = True
+                    print("health", self.health)
+                    print("enemy", self.currentEnemyHealth)
+                    if not self.enemies:
+                        return 1
+                if (self.health <= 0):
+                    return 0
             pygame.display.update()
 
-            
 
+#We play a game with randomzied input parameters, and if a valid iteration number is given, the input paramaters and the output is saved in a .npy file
 
-game1 = Game(5,10,1)
-game1.startGame()
+agro, health, power = random.randint(9)+1, random.randint(160) +1, random.randint(46)+1
+cond = np.array([[agro, health, power]])
+txt = "iteration" + __name__ + ".npy"
 
+print(agro, health, power)
+game = Game(agro, health, power)
+result = np.array([[0,0]])
+result[0][game.startGame()] = 1
+
+if __name__ != -1:
+    with open(txt, 'wb') as f:
+        np.save(f,cond) 
+        np.save(f, result)
