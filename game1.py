@@ -36,12 +36,9 @@ class Game(object):
     shots = []
     enemyEvent = pygame.USEREVENT+1
     playerEvent= pygame.USEREVENT+2
-    def __del__(self):
-        print("I'm being automatically destroyed. Goodbye!")
 
     def __init__(self, agro, health, power):
         self.window = pygame.display.set_mode((self.width,self.height))
-
         pygame.time.set_timer(self.enemyEvent, int(2000/ agro))
         pygame.time.set_timer(self.playerEvent, 1000)
         self.agro = agro
@@ -115,8 +112,6 @@ class Game(object):
                     self.enemyActivity() 
                 if event.type == self.playerEvent:
                     self.playerActivity()
-                    print("health", self.health)
-                    print("enemy", self.currentEnemyHealth)
                     if not self.enemies:
                         return 1
                 if (self.health <= 0):
@@ -124,18 +119,32 @@ class Game(object):
             pygame.display.update()
 
 
+#If the game is called from "prediction.py" it is given a set of parameters as comma seperated values on a string we use this parameters and print the result
+if ',' in __name__:
+    params = tuple(map(int, __name__.split(','))) 
+    agro = int(params[0])
+    health =  int(params[1])
+    power =  int(params[2])
+    print(health)
+    game = Game(agro, health, power)
+    result = game.startGame()
+    if result == 1:
+        print("Result is player victory!")
+        pygame.quit()
+    else:
+        print("Result is enemy victory!")
+        pygame.quit()
 #We play a game with randomzied input parameters, and if a valid iteration number is given, the input paramaters and the output is saved in a .npy file
-
-agro, health, power = random.randint(9)+1, random.randint(160) +1, random.randint(46)+1
-cond = np.array([[agro, health, power]])
-txt = "iteration" + __name__ + ".npy"
-
-print(agro, health, power)
-game = Game(agro, health, power)
-result = np.array([[0,0]])
-result[0][game.startGame()] = 1
-
-if __name__ != -1:
+#I used this with "get result.py" to get a set of games to predict upon
+else:
+    agro, health, power = random.randint(9)+1, random.randint(160) +1, random.randint(46)+1
+    cond = np.array([[agro, health, power]])
+    txt = "iteration" + __name__ + ".npy"
+    game = Game(agro, health, power)
+    result = np.array([[0,0]])
+    result[0][game.startGame()] = 1
     with open(txt, 'wb') as f:
         np.save(f,cond) 
         np.save(f, result)
+    pygame.quit()
+
