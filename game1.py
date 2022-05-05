@@ -125,7 +125,6 @@ if ',' in __name__:
     agro = int(params[0])
     health =  int(params[1])
     power =  int(params[2])
-    print(health)
     game = Game(agro, health, power)
     result = game.startGame()
     if result == 1:

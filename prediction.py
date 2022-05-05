@@ -52,9 +52,12 @@ class Predictor(object):
 
 predictor = Predictor()
 inputs1, targets1 = predictor.getdata("batch1.npy")
+inputs2, targets2 = predictor.getdata("batch2.npy")
+
 loss = 10
 while loss > 3:
     model,loss = predictor.train(100,inputs1,targets1)
+    model,loss = predictor.train(100,inputs2,targets2)
 
 
 
